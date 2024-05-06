@@ -170,7 +170,7 @@ window.addEventListener('load', () => {
       return;
     }
     
-    frameTime = currentTime;
+    currentTime = frameTime;
 
     ctx.clearRect(0, 0, innerWidth, innerHeight);
     
