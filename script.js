@@ -54,13 +54,13 @@ window.addEventListener('load', () => {
       this.reflectGrad.addColorStop(0.8, '#fff');
     }
 
-    rotate() {
-      if (this.rotation + this.rSpeed * rFactor > 2) {
+    rotate(refreshThrottle) {
+      if (this.rotation + this.rSpeed * rFactor * refreshThrottle > 2) {
         this.rotation = 0;
-      } else if (this.rotation + this.rSpeed * rFactor < 0) {
+      } else if (this.rotation + this.rSpeed * rFactor * refreshThrottle < 0) {
         this.rotation = 2;
       }
-      this.rotation += 0.015 * rFactor * this.factor;
+      this.rotation += 0.015 * rFactor * this.factor * refreshThrottle;
 
       for (let i = 1; i < 4; i++) {
         this.basePoints['x' + i] = this.x + Math.cos(Math.PI * this.rotation + (6 * i / 3)) * this.base;
@@ -160,22 +160,20 @@ window.addEventListener('load', () => {
   //      Animation Event      //
   ///////////////////////////////
 
-  let currentTime = Date.now();
-  
-  function animate() {
-    let frameTime = Date.now();
-    
-    if (frameTime - currentTime < 16) {
-      window.requestAnimationFrame(animate);
-      return;
-    }
-    
-    currentTime = frameTime;
+  // these variables will adjust movement speed to match the frame rate of the device (the time between rAF calls)
+  let firstFrameTime = performance.now();
+  let refreshThrottle = 1;
+  let tempRefreshThrottle = 0;
+
+  function animate(callbackTime) {
+    tempRefreshThrottle = callbackTime - firstFrameTime;
+    firstFrameTime = callbackTime;
+    refreshThrottle = tempRefreshThrottle / 30;
 
     ctx.clearRect(0, 0, innerWidth, innerHeight);
     
     for (let l = 0; l < pyramids.length; l++) {
-      if (moving) { pyramids[l].rotate(); }
+      if (moving) { pyramids[l].rotate(refreshThrottle); }
       pyramids[l].draw();
     }
     
@@ -192,5 +190,5 @@ window.addEventListener('load', () => {
     pyramids.push(new Triangle(k));
   }
 
-  animate();
+  window.requestAnimationFrame(animate);
 });
