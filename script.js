@@ -2,8 +2,8 @@ window.addEventListener('load', () => {
   ///////////////////////////////
   //          Globals          //
   ///////////////////////////////
-  let _w = window.innerWidth;
-  let _h = window.innerHeight;
+  let _w = window.innerWidth * window.devicePixelRatio;
+  let _h = window.innerHeight * window.devicePixelRatio;
 
   let canvas = document.getElementById('canvas');
   let ctx = canvas.getContext('2d');
@@ -68,43 +68,33 @@ window.addEventListener('load', () => {
       }
 
       this.x = centerX;
-      this.y = centerY - (this.height / 2) - (zDepth * userY / innerHeight);
+      this.y = centerY - (this.height / 2) - (zDepth * userY / _h);
       this.z = zDepth + this.factor;
     }
 
     draw() {
       ctx.strokeStyle = this.reflectGrad;
+      ctx.lineWidth = window.devicePixelRatio;
+
       ctx.beginPath();
       for (let j = 1; j < 4; j++) {
         ctx.moveTo(this.x, this.y);
         ctx.lineTo(this.basePoints['x' + j], this.basePoints['y' + j]);
-        ctx.stroke();
         if (j < 3) {
           ctx.moveTo(this.basePoints['x' + j], this.basePoints['y' + j]);
           ctx.lineTo(this.basePoints['x' + (j + 1)], this.basePoints['y' + (j + 1)]);
-          ctx.stroke();
         } else {
           ctx.moveTo(this.basePoints['x' + j], this.basePoints['y' + j]);
           ctx.lineTo(this.basePoints.x1, this.basePoints.y1);
-          ctx.stroke();
         }
       }
+      ctx.stroke();
     }
 
     update() {
       this.x = centerX;
-      this.y = centerY - this.height / 2 - (zDepth * userY / innerHeight);
+      this.y = centerY - this.height / 2 - (zDepth * userY / _h);
       this.z = zDepth + this.factor;
-
-      this.reflectGrad = ctx.createRadialGradient(this.x, this.y + this.height / this.z, 0, this.x, this.y + this.height / this.z, this.height * (this.z / zDepth));
-      this.reflectGrad.addColorStop(0, '#111');
-      this.reflectGrad.addColorStop(0.1, '#888');
-      this.reflectGrad.addColorStop(0.11, '#fff');
-      this.reflectGrad.addColorStop(0.3, '#444');
-      this.reflectGrad.addColorStop(0.45, '#222');
-      this.reflectGrad.addColorStop(0.6, '#efefef');
-      this.reflectGrad.addColorStop(0.7, '#444');
-      this.reflectGrad.addColorStop(0.8, '#fff');
     }
   }
 
@@ -122,6 +112,9 @@ window.addEventListener('load', () => {
   //       Event Handlers      //
   ///////////////////////////////
   function handleResize(){
+    _w = window.innerWidth * window.devicePixelRatio;
+    _h = window.innerHeight * window.devicePixelRatio;
+
     canvas.width = _w;
     canvas.height = _h;
   
@@ -138,18 +131,19 @@ window.addEventListener('load', () => {
 
   function handleMoveEvents(event) {
     let isTouch = Boolean(event.changedTouches);
+    let d = window.devicePixelRatio;
     
     if (isTouch) {
       event.preventDefault();
     }
 
-    userX = isTouch ? event.touches[0].clientX : event.clientX;
-    userY = isTouch ? event.touches[0].clientY : event.clientY;
+    userX = isTouch ? event.touches[0].clientX * d : event.clientX * d;
+    userY = isTouch ? event.touches[0].clientY * d : event.clientY * d;
 
     if (userY < 0) { userY = 0 }
 
-    rFactor = Math.round(userX - innerWidth/2) / Math.round(innerWidth / 2);
-    zDepth = 0.5 + (20 * userY / innerHeight);
+    rFactor = Math.round(userX - _w / 2) / Math.round(_w / 2);
+    zDepth = 0.5 + (10 * userY / _h);
   }
 
   function handleClickLikeEvents(event) {
@@ -168,9 +162,9 @@ window.addEventListener('load', () => {
   function animate(callbackTime) {
     tempRefreshThrottle = callbackTime - firstFrameTime;
     firstFrameTime = callbackTime;
-    refreshThrottle = tempRefreshThrottle / 30;
+    refreshThrottle = Math.min(1, tempRefreshThrottle / 30);
 
-    ctx.clearRect(0, 0, innerWidth, innerHeight);
+    ctx.clearRect(0, 0, _w, _h);
     
     for (let l = 0; l < pyramids.length; l++) {
       if (moving) { pyramids[l].rotate(refreshThrottle); }
